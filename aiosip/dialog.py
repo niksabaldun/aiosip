@@ -355,8 +355,7 @@ class InviteDialog(DialogBase):
         self._waiter = asyncio.Future()
 
     async def receive_message(self, msg):  # noqa: C901
-
-        if 'tag' not in self.to_details['params']:
+        if 'tag' not in self.to_details['params'] and 'tag' in msg.to_details['params']:
             del self.app._dialogs[self.dialog_id]
             self.to_details['params']['tag'] = msg.to_details['params']['tag']
             self.app._dialogs[self.dialog_id] = self

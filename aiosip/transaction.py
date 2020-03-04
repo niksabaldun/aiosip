@@ -3,6 +3,7 @@ import logging
 
 from aiosip.auth import Auth
 from .exceptions import AuthentificationFailed
+from .dialog import InviteDialog
 
 
 LOG = logging.getLogger(__name__)
@@ -158,5 +159,8 @@ class FutureTransaction(BaseTransaction):
 class UnreliableTransaction(FutureTransaction):
     def close(self):
         if self._running and not self._future.done():
+            if type(self.dialog) is InviteDialog:
+                self.dialog.close()
+            else:
                 self.dialog.cancel(cseq=self.original_msg.cseq)
         super().close()

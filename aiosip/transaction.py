@@ -160,7 +160,7 @@ class UnreliableTransaction(FutureTransaction):
     def close(self):
         if self._running and not self._future.done():
             if type(self.dialog) is aiosip.dialog.InviteDialog:
-                self.dialog.close()
+                self.loop.run_until_complete(self.dialog.close())
             else:
                 self.dialog.cancel(cseq=self.original_msg.cseq)
         super().close()

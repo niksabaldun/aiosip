@@ -22,7 +22,7 @@ class UDP(asyncio.DatagramProtocol):
             msg.headers['Via'][0] %= {'protocol': self.via}
 
         LOG.log(5, 'Sending to: "%s" via UDP: "%s"', addr, msg)
-        self.transport.sendto(msg.encode(), addr)
+        self.transport.sendto(msg.encode())
 
     def connection_lost(self, error):
         self.app._connection_lost(self)

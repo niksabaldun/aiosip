@@ -396,7 +396,7 @@ class InviteDialog(DialogBase):
 
         await self._queue.put(msg)
 
-        # TODO: sip timers and flip to Terminated after timeout
+        # TODO: sip timers and flip to Terminated after timeout?
         if self._state == CallState.Calling:
             await handle_calling_state(msg)
 
@@ -432,9 +432,12 @@ class InviteDialog(DialogBase):
     async def recv(self):
         return await self._queue.get()
 
-    async def wait_for_terminate(self):
-        while not self._waiter.done():
-            yield await self._queue.get()
+    async def wait_for_terminate(self, timeout=10):
+        try:
+            while not self._waiter.done():
+                yield await asyncio.wait_for(self._queue.get(), timeout)
+        except asyncio.TimeoutError:
+            LOG.warning("Timeout during wait a response from the server")
 
     async def ready(self):
         msg = await self._waiter

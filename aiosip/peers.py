@@ -1,6 +1,7 @@
 import uuid
 import asyncio
 import logging
+import traceback
 import ipaddress
 import websockets
 
@@ -77,7 +78,7 @@ class Peer:
             **kwargs
         )
 
-        LOG.debug('Creating: %s', dialog)
+        LOG.debug('Creating dialog: %s', dialog)
         self._app._dialogs[dialog.dialog_id] = dialog
         self._app._dialogs[
             frozenset((dialog.original_msg.to_details['params'].get('tag'), None, dialog.call_id))
@@ -130,7 +131,6 @@ class Peer:
         return await self.request('REGISTER', **kwargs)
 
     async def invite(self, dialog_factory=InviteDialog, **kwargs):
-
         dialog = self._create_dialog(dialog_factory=dialog_factory, method='INVITE', **kwargs)
         await dialog.start()
         return dialog
@@ -197,8 +197,8 @@ class BaseConnector:
             peer = await self._find_peer(peer_addr, local_addr)
 
         if peer is None:
-            LOG.debug('Creating: %s', peer)
             peer = self._create_peer(peer_addr)
+            LOG.debug('Creating peer: %s', peer)
             await self._connect_peer(peer, local_addr, **kwargs)
         else:
             await peer.connected

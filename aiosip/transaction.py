@@ -87,19 +87,36 @@ class BaseTransaction:
         self.authentification = asyncio.ensure_future(self._timer())
 
     def _handle_proxy_authenticate(self, msg):
-        self._handle_proxy_authenticate(msg)
-        self.original_msg = self.original_msg.pop(msg.cseq)
-        del (self.original_msg.headers['CSeq'])
-        self.original_msg.headers['Proxy-Authorization'] = str(Auth.from_authenticate_header(
+        if self.dialog.password is None:
+            raise ValueError('Password required for authentication')
+
+        self.attempts -= 1
+        if self.attempts < 1:
+            self._error(AuthentificationFailed('Too many unauthorized attempts!'))
+            return
+        elif self.authentification:
+            self.authentification.cancel()
+            self.authentification = None
+
+        if msg.method.upper() == 'REGISTER':
+            username = msg.to_details['uri']['user']
+        else:
+            username = msg.from_details['uri']['user']
+
+        self.original_msg.cseq += 1
+        auth = Auth.from_authenticate_header(
             authenticate=msg.headers['Proxy-Authenticate'],
-            method=msg.method,
-            uri=str(self.to_details),
-            username=self.to_details['uri']['user'],
-            password=self.dialog.password))
-        self.dialog.send_message(msg.method,
-                                 headers=self.original_msg.headers,
-                                 payload=self.original_msg.payload,
-                                 future=self.futrue)
+            method=msg.method)
+        proxy_auth_header = auth.generate_authorization(
+            uri=msg.to_details['uri'].short_uri(),
+            username=username,
+            password=self.dialog.password)
+        self.original_msg.headers['Proxy-Authorization'] = str(proxy_auth_header)
+        self.original_msg.headers['To'] = self.original_msg.headers['To'].split(';')[0]
+        if hasattr(self.original_msg, '_to_details'):
+            del self.original_msg._to_details
+        self.dialog.transactions[self.original_msg.method][self.original_msg.cseq] = self
+        self.authentification = asyncio.ensure_future(self._timer())
 
     def __repr__(self):
         return '<{0} cseq={1}, method={2}, dialog={3}>'.format(

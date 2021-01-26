@@ -112,9 +112,6 @@ class BaseTransaction:
             username=username,
             password=self.dialog.password)
         self.original_msg.headers['Proxy-Authorization'] = str(proxy_auth_header)
-        self.original_msg.headers['To'] = self.original_msg.headers['To'].split(';')[0]
-        if hasattr(self.original_msg, '_to_details'):
-            del self.original_msg._to_details
         self.dialog.transactions[self.original_msg.method][self.original_msg.cseq] = self
         self.authentification = asyncio.ensure_future(self._timer())
 

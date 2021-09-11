@@ -1,13 +1,16 @@
+import re
 import asyncio
 import logging
 
 import aiosip
 from aiosip.auth import Auth
 from .exceptions import AuthentificationFailed
+from .utils import gen_branch
 
 
 LOG = logging.getLogger(__name__)
 
+_VIA_BRANCH_RE = re.compile(r';branch=[^;]+')
 
 class BaseTransaction:
     def __init__(self, dialog, original_msg=None, attempts=3, *, loop=None):
@@ -82,6 +85,9 @@ class BaseTransaction:
             payload=msg.payload,
             uri=msg.to_details['uri'].short_uri()
         )
+        self.original_msg.headers['Via'] = _VIA_BRANCH_RE.sub(
+            ';branch=' + gen_branch(), self.original_msg.headers['Via']
+        )
 
         self.dialog.transactions[self.original_msg.method][self.original_msg.cseq] = self
         self.authentification = asyncio.ensure_future(self._timer())
@@ -111,6 +117,9 @@ class BaseTransaction:
             uri=msg.to_details['uri'].short_uri(),
             username=username,
             password=self.dialog.password)
+        self.original_msg.headers['Via'] = _VIA_BRANCH_RE.sub(
+            ';branch=' + gen_branch(), self.original_msg.headers['Via']
+        )
         self.original_msg.headers['Proxy-Authorization'] = str(proxy_auth_header)
         self.dialog.transactions[self.original_msg.method][self.original_msg.cseq] = self
         self.authentification = asyncio.ensure_future(self._timer())

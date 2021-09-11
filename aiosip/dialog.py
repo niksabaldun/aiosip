@@ -51,7 +51,7 @@ class DialogBase:
         self.auth = None
 
         # TODO: Needs to be last because we need the above attributes set
-        self.original_msg = self._prepare_request(method, headers=headers, payload=payload)
+        self.original_msg = self._prepare_request(method, cseq=0, headers=headers, payload=payload)
 
         self._closed = False
         self._closing = None
@@ -65,9 +65,12 @@ class DialogBase:
     def _receive_response(self, msg):
 
         if 'tag' not in self.to_details['params']:
-            del self.app._dialogs[self.dialog_id]
-            self.to_details['params']['tag'] = msg.to_details['params']['tag']
-            self.app._dialogs[self.dialog_id] = self
+            # To-tag is not sent on SUBSCRIBE retransmission
+            if msg.method.upper() != 'SUBSCRIBE' and msg.status_code != 401:
+                self.original_msg.to_details['params'].pop('tag', None)
+                del self.app._dialogs[self.dialog_id]
+                self.to_details['params']['tag'] = msg.to_details['params']['tag']
+                self.app._dialogs[self.dialog_id] = self
 
         try:
             transaction = self.transactions[msg.method][msg.cseq]
@@ -81,7 +84,7 @@ class DialogBase:
 
     def _prepare_request(self, method, contact_details=None, headers=None, payload=None, cseq=None, to_details=None):
 
-        if not cseq:
+        if cseq is not None:
             self.cseq += 1
 
         if contact_details:

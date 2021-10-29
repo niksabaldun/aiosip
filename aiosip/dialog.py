@@ -65,8 +65,7 @@ class DialogBase:
     def _receive_response(self, msg):
 
         if 'tag' not in self.to_details['params']:
-            # To-tag is not sent on SUBSCRIBE retransmission
-            if msg.method.upper() != 'SUBSCRIBE' and msg.status_code != 401:
+            if msg.status_code != 401:
                 self.original_msg.to_details['params'].pop('tag', None)
                 del self.app._dialogs[self.dialog_id]
                 self.to_details['params']['tag'] = msg.to_details['params']['tag']
@@ -300,9 +299,10 @@ class Dialog(DialogBase):
         self._maybe_close(msg)
 
     async def refresh(self, headers=None, expires=1800, *args, **kwargs):
-        headers = CIMultiDict(headers or {})
-        if 'Expires' not in headers:
-            headers['Expires'] = int(expires)
+        headers = CIMultiDict(headers or self.original_msg.headers)
+        headers['Expires'] = int(expires)
+        if self.original_msg.method =='SUBSCRIBE':
+            self.cseq += 1
         return await self.request(self.original_msg.method, headers=headers, *args, **kwargs)
 
     async def close(self, headers=None, fast=False, *args, **kwargs):
@@ -310,11 +310,8 @@ class Dialog(DialogBase):
             self._closed = True
             result = None
             if not fast and not self.inbound and self.original_msg.method in ('REGISTER', 'SUBSCRIBE'):
-                headers = CIMultiDict(headers or {})
-                if 'Expires' not in headers:
-                    headers['Expires'] = 0
                 try:
-                    result = await self.request(self.original_msg.method, headers=headers, *args, **kwargs)
+                    result = await self.refresh(headers=headers, expires=0)
                 finally:
                     self._close()
 

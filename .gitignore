@@ -53,3 +53,6 @@ venv
 pyvenv
 .cache/
 
+# VS Code workspace files
+*.code-workspace
+

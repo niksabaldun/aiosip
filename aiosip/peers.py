@@ -32,7 +32,8 @@ class Peer:
             await self._disconnected_future
 
     def send_message(self, msg):
-        self._protocol.send_message(msg, addr=self.peer_addr)
+        if self._protocol is not None:
+            self._protocol.send_message(msg, addr=self.peer_addr)
 
     def _create_dialog(self, method, from_details, to_details, contact_details=None, password=None, call_id=None,
                        headers=None, payload=None, cseq=0, inbound=False, dialog_factory=Dialog, **kwargs):

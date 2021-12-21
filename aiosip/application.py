@@ -145,7 +145,8 @@ class Application(MutableMapping):
         if dialog is None:
             dialog = self._dialogs.get(frozenset((None, msg.from_details['params']['tag'], call_id)))
 
-        if dialog is not None:
+        # Notifies are part of the dialog, but are more easily handled in dialplan
+        if dialog is not None and msg.method != 'NOTIFY':
             await dialog.receive_message(msg)
             return
 

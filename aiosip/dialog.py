@@ -65,7 +65,7 @@ class DialogBase:
     def _receive_response(self, msg):
 
         if 'tag' not in self.to_details['params']:
-            if msg.status_code != 401:
+            if msg.status_code not in (401, 407):
                 self.original_msg.to_details['params'].pop('tag', None)
                 del self.app._dialogs[self.dialog_id]
                 self.to_details['params']['tag'] = msg.to_details['params']['tag']

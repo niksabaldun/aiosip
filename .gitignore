@@ -40,6 +40,8 @@ nike_tests
 .pydevproject
 .idea
 *.iml
+.vscode
+*.code-workspace
 
 # Complexity
 output/*.html

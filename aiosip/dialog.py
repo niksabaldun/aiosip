@@ -48,6 +48,7 @@ class DialogBase:
         self.cseq = cseq
         self.inbound = inbound
         self.transactions = defaultdict(dict)
+        self.last_response = None
         self.auth = None
 
         # TODO: Needs to be last because we need the above attributes set
@@ -74,6 +75,7 @@ class DialogBase:
         try:
             transaction = self.transactions[msg.method][msg.cseq]
             transaction._incoming(msg)
+            self.last_response = msg
         except KeyError:
             if msg.method != 'ACK':
                 # TODO: Hack to suppress warning on ACK messages,

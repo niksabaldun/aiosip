@@ -59,8 +59,8 @@ class DialogBase:
 
     @property
     def dialog_id(self):
-        return frozenset((self.original_msg.to_details['params'].get('tag'),
-                          self.original_msg.from_details['params']['tag'],
+        return frozenset(('R' + self.original_msg.to_details['params'].get('tag', ''),
+                          'L' + self.original_msg.from_details['params']['tag'],
                           self.call_id))
 
     def _receive_response(self, msg):
@@ -290,8 +290,8 @@ class Dialog(DialogBase):
         if 'tag' in msg.to_details['params']:
             try:
                 del self.app._dialogs[
-                    frozenset((self.original_msg.to_details['params'].get('tag'),
-                               None,
+                    frozenset(('R' + self.original_msg.to_details['params'].get('tag', ''),
+                               'L',
                                self.call_id))
                 ]
             except KeyError:

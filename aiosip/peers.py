@@ -82,7 +82,7 @@ class Peer:
         LOG.debug('Creating dialog: %s', dialog)
         self._app._dialogs[dialog.dialog_id] = dialog
         self._app._dialogs[
-            frozenset((dialog.original_msg.to_details['params'].get('tag'), None, dialog.call_id))
+            frozenset(('R' + dialog.original_msg.to_details['params'].get('tag', ''), 'L', dialog.call_id))
         ] = dialog
         return dialog
 

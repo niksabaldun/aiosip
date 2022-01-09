@@ -136,14 +136,14 @@ class Application(MutableMapping):
 
         # First incoming request of dialogs do not yet have a tag in to headers
         if 'tag' in msg.to_details['params']:
-            dialog = self._dialogs.get(frozenset((msg.to_details['params']['tag'],
-                                                  msg.from_details['params']['tag'],
+            dialog = self._dialogs.get(frozenset(('R' + msg.to_details['params']['tag'],
+                                                  'L' + msg.from_details['params']['tag'],
                                                   call_id)))
 
         # First response of dialogs have a tag in the to header but the dialog is not
         # yet aware of it. Try to match only with the from header tag
         if dialog is None:
-            dialog = self._dialogs.get(frozenset((None, msg.from_details['params']['tag'], call_id)))
+            dialog = self._dialogs.get(frozenset(('R', 'L' + msg.from_details['params']['tag'], call_id)))
 
         # Notifies are part of the dialog, but are more easily handled in dialplan
         if dialog is not None and msg.method != 'NOTIFY':

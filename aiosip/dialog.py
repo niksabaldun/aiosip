@@ -59,15 +59,15 @@ class DialogBase:
 
     @property
     def dialog_id(self):
-        return frozenset(('R' + self.original_msg.to_details['params'].get('tag', ''),
-                          'L' + self.original_msg.from_details['params']['tag'],
+        return frozenset((self.to_details['params'].get('tag'),
+                          self.from_details['params']['tag'],
                           self.call_id))
 
     def _receive_response(self, msg):
 
         if 'tag' not in self.to_details['params']:
-            if msg.status_code not in (401, 407):
-                self.original_msg.to_details['params'].pop('tag', None)
+            if msg.status_code not in (401, 407) or msg.method == 'REGISTER':
+                self.to_details['params'].pop('tag', None)
                 del self.app._dialogs[self.dialog_id]
                 self.to_details['params']['tag'] = msg.to_details['params']['tag']
                 self.app._dialogs[self.dialog_id] = self
@@ -251,7 +251,7 @@ class DialogBase:
         return msg
 
     def __repr__(self):
-        return f'<{self.__class__.__name__} call_id={self.call_id}, peer={self.peer}>'
+        return f'<{self.__class__.__name__} id={self.call_id}:{self.from_details["params"].get("tag", "")}:{self.to_details["params"].get("tag", "")}, peer={self.peer}>'
 
     async def __aenter__(self):
         return self
@@ -290,7 +290,7 @@ class Dialog(DialogBase):
         if 'tag' in msg.to_details['params']:
             try:
                 del self.app._dialogs[
-                    frozenset(('R' + self.original_msg.to_details['params'].get('tag', ''),
+                    frozenset(('R' + self.to_details['params'].get('tag', ''),
                                'L',
                                self.call_id))
                 ]
@@ -303,8 +303,15 @@ class Dialog(DialogBase):
     async def refresh(self, headers=None, expires=1800, *args, **kwargs):
         headers = CIMultiDict(headers or self.original_msg.headers)
         headers['Expires'] = int(expires)
-        if self.original_msg.method =='SUBSCRIBE':
+        if self.original_msg.method == 'SUBSCRIBE':
             self.cseq += 1
+        elif self.original_msg.method == 'REGISTER':
+            # REGISTER is a peculiar pseudo-dialog
+            # Each refresh gets a new to-tag and Cseq restarts from 1
+            del self.app._dialogs[self.dialog_id]
+            self.to_details['params'].pop('tag', None)
+            self.app._dialogs[self.dialog_id] = self
+            self.cseq = 1
         return await self.request(self.original_msg.method, headers=headers, *args, **kwargs)
 
     async def close(self, headers=None, fast=False, *args, **kwargs):

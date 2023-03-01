@@ -50,6 +50,8 @@ class DialogBase:
         self.transactions = defaultdict(dict)
         self.last_response = None
         self.auth = None
+        self.status_code = 0
+        self.status_message = ''
 
         # TODO: Needs to be last because we need the above attributes set
         self.original_msg = self._prepare_request(method, cseq=0, headers=headers, payload=payload)

@@ -13,16 +13,14 @@ class TestServer:
         self.app = app
         self._loop = loop
 
-    @asyncio.coroutine
-    def start_server(self, protocol, *, loop=None):
+    async def start_server(self, protocol, *, loop=None):
         self.handler = self.app.run(
             protocol=protocol,
             local_addr=(self.sip_config['server_host'], self.sip_config['server_port'])
         )
         return self.handler
 
-    @asyncio.coroutine
-    def close(self):
+    async def close(self):
         pass
 
     @property
@@ -59,8 +57,7 @@ def protocol(request):
 def test_server(protocol, loop):
     servers = []
 
-    @asyncio.coroutine
-    def go(handler, **kwargs):
+    async def go(handler, **kwargs):
         server = TestServer(handler)
         yield from server.start_server(protocol, loop=loop, **kwargs)
         servers.append(server)
@@ -68,8 +65,7 @@ def test_server(protocol, loop):
 
     yield go
 
-    @asyncio.coroutine
-    def finalize():
+    async def finalize():
         while servers:
             yield from servers.pop().close()
 
@@ -80,8 +76,7 @@ def test_server(protocol, loop):
 def test_proxy(protocol, loop):
     servers = []
 
-    @asyncio.coroutine
-    def go(handler, **kwargs):
+    async def go(handler, **kwargs):
         server = TestProxy(handler)
         yield from server.start_server(protocol, loop=loop, **kwargs)
         servers.append(server)
@@ -89,8 +84,7 @@ def test_proxy(protocol, loop):
 
     yield go
 
-    @asyncio.coroutine
-    def finalize():
+    async def finalize():
         while servers:
             yield from servers.pop().close()
 
